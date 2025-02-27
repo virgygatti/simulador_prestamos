@@ -8,11 +8,11 @@ form.addEventListener('submit', function (e) {
     // Ocultar el resultado y las cuotas
     const resultado = document.getElementById('resultado');
     resultado.style.display = 'none';
-    for(i=1; i<=12; i++){
-        var idCuota = "cuota"+i;
-        const spanCuota = document.getElementById(idCuota);
-        spanCuota.style.display = 'none';
-    }
+
+    const spanCantidad = document.getElementById("cantidad");
+    spanCantidad.style.display = 'none';
+    const spanValor = document.getElementById("valor");
+    spanValor.style.display = 'none';
 
     // Ocultar el mensaje de error por defecto
     if (errorMessage) {
@@ -28,10 +28,10 @@ form.addEventListener('submit', function (e) {
     var edadValue = parseInt(edad, 10);
     const montoElement = document.getElementById('monto');
     var montoValue = parseInt(montoElement.value, 10); // Convertir a entero
-    const plazoElement = document.getElementById('plazo');
-    var plazoValue = parseInt(plazoElement.value, 10);
+    const cuotasElement = document.getElementById('cuotas');
+    var cuotasValue = parseInt(cuotasElement.value, 10);
 
-    if(validarCampos(edadValue, montoValue, plazoElement) == false) {
+    if(validarCampos(edadValue, montoValue, cuotasElement) == false) {
         return;
     };
 
@@ -43,34 +43,17 @@ form.addEventListener('submit', function (e) {
     }
     
     //Simulador
-    var cuotas = calcularValorCuota(plazoValue, montoValue);
+    var valorCuota = 1.5* montoValue/cuotasValue;
 
-    console.log("Cuotas a pagar");
-
-    for(i=1; i<=plazoValue; i++){
-        var idCuota = "cuota"+i;
-        const spanCuota = document.getElementById(idCuota);
-        var texto = "Cuota " + i + ": " + cuotas[i-1].toFixed(2);
-        spanCuota.innerText = texto;
-        console.log(texto);
-        spanCuota.style.display = 'block';
-    }
+    spanCantidad.innerText = "Cantidad de cuotas: " + cuotasValue;
+    spanValor.innerText = "Monto de cada cuota: $" + valorCuota.toFixed(2);
+    spanCantidad.style.display = 'block';
+    spanValor.style.display = 'block';
     resultado.style.display = 'block';
 
 });
 
-function calcularValorCuota (numeroDeCuotas, monto) {
-    var cuotasArray = [];
-    var cuotaPrevia = monto/numeroDeCuotas;
-    for(i=0; i<numeroDeCuotas; i++){
-        cuotaPrevia = cuotaPrevia * 1.15;
-        cuotasArray.push(cuotaPrevia);
-    }
-    return cuotasArray;
-
-};
-
-function validarCampos (edad, monto, plazoElem) {
+function validarCampos (edad, monto, cuotasElem) {
     if (edad != null) {
         if (isNaN(edad)) {
             if (errorMessage) {
@@ -87,23 +70,73 @@ function validarCampos (edad, monto, plazoElem) {
         }
         return false;
     }
-
-    // Validar campo de texto como número entre 10000 y 1000000. No se está usando ya que tiene la validación de HTML.
-    if (isNaN(monto) || monto < 10000 || monto > 1000000) {
-        if (errorMessage) {
-            errorMessage.textContent = 'El número debe estar entre 10000 y 1000000.';
-            errorMessage.style.display = 'block'; // Mostrar error
-        }
-        return false;
-    }
-
-    // Validar que el select tenga un valor seleccionado. No se está usando ya que tiene la validación de HTML.
-    if (!plazoElem.value) {
-        if (errorMessage) {
-            errorMessage.textContent = 'Por favor, selecciona un plazo válido.';
-            errorMessage.style.display = 'block'; // Mostrar error
-        }
-        return false;
-    }
-    return true;
 };
+
+// Cargamos los préstamos desde prestamos.json
+fetch('prestamos.json')
+    .then(response => response.json())
+    .then(data => mostrarPrestamos(data))
+    .catch(error => console.error('Error al cargar préstamos:', error));
+
+// Creamos una funcion para generar las cards de los prestamos dentro del index.html
+function mostrarPrestamos(prestamos) {
+    const contenedor = document.getElementById("prestamos-list");
+    contenedor.innerHTML = '';
+    prestamos.forEach(prestamo => {
+        const card = document.createElement("div");
+        card.className = 'col-md-4 mb-4';
+        card.innerHTML = `
+            <div class="card h-100">
+                <img src="${prestamo.imagen}" class="card-img-top" alt="${prestamo.nombre}">
+                <div class="card-body">
+                    <h5 class="card-title">${prestamo.nombre}</h5>
+                    <button class="btn btn-success btn-seleccionar" data-id="${prestamo.id}" data-cuotas="${prestamo.cuotas}" data-minimo="${prestamo.minimo}" data-maximo="${prestamo.maximo}">
+                        Seleccionar
+                    </button>
+                </div>
+            </div>
+        `;
+        contenedor.appendChild(card);
+    });
+    agregarEventosBotones();
+}
+
+// Función para manejar los botones "Seleccionar"
+function agregarEventosBotones() {
+    const botones = document.querySelectorAll('.btn-seleccionar');
+    botones.forEach(boton => {
+        boton.addEventListener('click', (event) => {
+            // Ocultar el resultado y las cuotas
+            const resultado = document.getElementById('resultado');
+            resultado.style.display = 'none';
+            document.getElementById('monto').value = "";
+
+            const id = boton.getAttribute('data-id');
+            const cuotas = boton.getAttribute('data-cuotas');
+            const minimo = boton.getAttribute('data-minimo');
+            const maximo = boton.getAttribute('data-maximo');
+
+            mostrarPrestamoSeleccionado({ id, cuotas, minimo, maximo });
+        });
+    });
+}
+
+function mostrarPrestamoSeleccionado(prestamo) {
+    cuotasList = prestamo.cuotas.split(',');
+
+    const cuotas = document.getElementById('cuotas');
+    cuotas.innerHTML = `
+    <option value="" disabled selected>Elige una opción...</option>
+    <option value="${cuotasList[0]}">${cuotasList[0]}</option>
+    <option value="${cuotasList[1]}">${cuotasList[1]}</option>
+    <option value="${cuotasList[2]}">${cuotasList[2]}</option>
+    `;
+
+    const monto = document.getElementById('monto');
+    monto.placeholder = `Mínimo: ${prestamo.minimo} - Máximo: ${prestamo.maximo}`;
+    monto.min = `${prestamo.minimo}`;
+    monto.max = `${prestamo.maximo}`;
+
+    const datos = document.getElementById('datos-cuotas');
+    datos.style.display = 'block';
+}

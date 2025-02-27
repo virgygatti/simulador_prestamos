@@ -1,0 +1,28 @@
+[
+    {
+        "id": 1,
+        "nombre": "Hipotecario",
+        "cuotas": [60,120,240],
+        "minimo": 10000000,
+        "maximo": 100000000,
+        "imagen": "img/casa.jpg"
+    },
+
+    {
+        "id": 2,
+        "nombre": "Prendario",
+        "cuotas": [12,24,48],
+        "minimo": 1000000,
+        "maximo": 10000000,
+        "imagen": "img/auto.jpg"
+    },
+
+    {
+        "id": 3,
+        "nombre": "Personal",
+        "cuotas": [3,6,12],
+        "minimo": 10000,
+        "maximo": 1000000,
+        "imagen": "img/persona.jpg"
+    }
+]
