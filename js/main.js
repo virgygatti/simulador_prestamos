@@ -1,9 +1,8 @@
 const form = document.getElementById('myForm');
-const errorMessage = document.getElementById('errorMessage');
-const edadMessage = document.getElementById('edadMessage');
 
 form.addEventListener('submit', function (e) {
     e.preventDefault(); // Evitar envío
+    localStorage.clear();
 
     // Ocultar el resultado y las cuotas
     const resultado = document.getElementById('resultado');
@@ -13,64 +12,59 @@ form.addEventListener('submit', function (e) {
     spanCantidad.style.display = 'none';
     const spanValor = document.getElementById("valor");
     spanValor.style.display = 'none';
-
-    // Ocultar el mensaje de error por defecto
-    if (errorMessage) {
-        errorMessage.style.display = 'none';
-    }
-
-    // Ocultar el mensaje de edad por defecto
-    if (edadMessage) {
-        edadMessage.style.display = 'none';
-    }
+    const spanTasa = document.getElementById("tasa");
+    spanTasa.style.display = 'none';
+    const spanMontoFinal = document.getElementById("montoFinal");
+    spanMontoFinal.style.display = 'none';
     
-    var edad = prompt("Ingrese su edad", "21");
-    var edadValue = parseInt(edad, 10);
-    const montoElement = document.getElementById('monto');
-    var montoValue = parseInt(montoElement.value, 10); // Convertir a entero
-    const cuotasElement = document.getElementById('cuotas');
-    var cuotasValue = parseInt(cuotasElement.value, 10);
-
-    if(validarCampos(edadValue, montoValue, cuotasElement) == false) {
-        return;
-    };
-
-    if(edadValue < 18 || edadValue > 100){
-        if (edadMessage) {
-            edadMessage.style.display = 'block'; // Mostrar mensaje
-        }
-        return;
-    }
+    var montoValue = parseInt(document.getElementById('monto').value, 10); // Convertir a entero
+    var cuotasValue = parseInt(document.getElementById('cuotas').value, 10);
     
     //Simulador
     var valorCuota = 1.5* montoValue/cuotasValue;
 
-    spanCantidad.innerText = "Cantidad de cuotas: " + cuotasValue;
-    spanValor.innerText = "Monto de cada cuota: $" + valorCuota.toFixed(2);
+    localStorage.setItem("cantidad", cuotasValue);
+    localStorage.setItem("valor", valorCuota.toFixed(2));
+    localStorage.setItem("montoFinal", cuotasValue*valorCuota);
+    localStorage.setItem("tasa", (((cuotasValue*valorCuota)/montoValue) - 1)*100);
+
+    spanCantidad.innerText = "Cantidad de cuotas: " + localStorage.getItem("cantidad");
+    spanValor.innerText = "Monto de cada cuota: $" + localStorage.getItem("valor");
+    spanMontoFinal.innerText = "Monto total a devolver: " + localStorage.getItem("montoFinal");
+    spanTasa.innerText = "Tasa de interés: " + localStorage.getItem("tasa") + "%";
     spanCantidad.style.display = 'block';
     spanValor.style.display = 'block';
+    spanMontoFinal.style.display = 'block';
+    spanTasa.style.display = 'block';
     resultado.style.display = 'block';
 
 });
 
-function validarCampos (edad, monto, cuotasElem) {
-    if (edad != null) {
-        if (isNaN(edad)) {
-            if (errorMessage) {
-                errorMessage.textContent = 'La edad debe ser un número';
-                errorMessage.style.display = 'block'; // Mostrar error
-            }
-            return false;
+document.getElementById("confirmarBtn").addEventListener("click", function() {
+    Swal.fire({
+        title: "¿Estás seguro?",
+        text: "Esta acción no se puede deshacer",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sí, confirmar",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire("Confirmado", "Tu préstamo ha sido solicitado", "success");
+            document.getElementById("resultado").style.display = "none";
+            document.getElementById("datos-cuotas").style.display = "none";
+            document.getElementById("cantidad").innerText = "";
+            document.getElementById("valor").innerText = "";
+            document.getElementById("tasa").innerText = "";
+            document.getElementById("montoFinal").innerText = "";
+            localStorage.clear();            
+            document.getElementById("myForm").reset();
+
         }
-    }
-    else{
-        if (errorMessage) {
-            errorMessage.textContent = 'Debe ingresar su edad';
-            errorMessage.style.display = 'block'; // Mostrar error
-        }
-        return false;
-    }
-};
+    });
+});
 
 // Cargamos los préstamos desde prestamos.json
 fetch('prestamos.json')
